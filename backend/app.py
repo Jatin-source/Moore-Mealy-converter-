@@ -1,4 +1,9 @@
 import os
+import sys
+
+# Ensure Python can resolve the 'backend' package regardless of where this is run from
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from flask import Flask, send_from_directory, jsonify, request
 
 # Point Flask's static and template folders to the frontend directory
