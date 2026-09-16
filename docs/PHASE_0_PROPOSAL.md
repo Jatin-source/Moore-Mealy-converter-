@@ -2,9 +2,10 @@
 
 ## 1. Architecture & Tech Stack
 - **Core Algorithm Engine**: Python 3.10+ using a clean modular architecture (dataclasses, type hints).
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript. Interactive SVG state diagrams.
+- **Premium Frontend Engine**: HTML5, Tailwind CSS (for sleek, modern glassmorphism/neon styling), and Vanilla JavaScript. 
+- **Animation & Physics**: **GSAP (GreenSock)** for high-performance, fluid UI transitions and state step animations. **D3.js** for rendering and smoothly animating the SVG state diagrams (e.g., nodes splitting, dynamic edge routing, particle pulses for simulations).
 - **Integration**: Flask (Python).
-  - *Justification*: We will serve the frontend statically directly from Flask (`app.py` serving `index.html` from a `static`/`templates` folder). This ensures there is only **one process to run** (`python app.py`) with no complex JS build pipelines (no Node/NPM required). This is the most reliable, easily explainable setup for a college viva.
+  - *Justification*: We will serve the frontend statically directly from Flask (`app.py` serving `index.html`). This ensures there is only **one process to run** (`python app.py`) while still delivering a fully interactive, ultra-premium animated experience via CDN-linked libraries (Tailwind, GSAP, D3). No Node/NPM complexity, maximum visual impact.
 
 ## 2. Full Feature List
 - Bi-directional conversion: Moore → Mealy and Mealy → Moore.
@@ -18,36 +19,40 @@
 - Built-in educational theory section ("About Conversion").
 - "Demo Example" button for one-click complex state-splitting demonstration.
 
-## 3. UI Wireframe
+## 3. UI Wireframe & Styling Direction
+*Style Concept: "Cyber-Academic" — Dark mode by default, glassmorphic panels, neon-glowing active states, fluid GSAP layout transitions.*
+
 ```text
-HEADER
+HEADER  [Glowing Logo]
 "Moore ↔ Mealy Machine Simulator"
 
-MACHINE TYPE
+MACHINE TYPE  (Smooth sliding pill-toggle)
 [ Moore → Mealy ]   [ Mealy → Moore ]
 
-INPUT MACHINE
+INPUT MACHINE  (Floating Glass Panel)
   States: [q0] [q1] [q2] [+ Add State]
   Input Alphabet: [0] [1] [+ Add]
   Output Alphabet: [0] [1] [+ Add]
   Initial State: [q0 ▾]
 
-TRANSITION / OUTPUT TABLE   (dynamic, editable)
+TRANSITION / OUTPUT TABLE   (Dynamic, fades in/out cleanly)
 
-[ VALIDATE MACHINE ]
-[ CONVERT ]
+[ VALIDATE MACHINE ] (Hover: subtle pulse)
+[ CONVERT ] (Hover: primary accent glow)
 
-CONVERSION STEPS
+CONVERSION STEPS (Side Panel, slides in gracefully)
   Step 1 / Step 2 / Step 3 / ...
   [Previous] [Play] [Pause] [Next]
 
-VISUALIZATION
-  Original Machine   →   Converted Machine   (interactive SVG diagrams)
+VISUALIZATION (Main Stage - D3.js powered)
+  Original Machine   →   Converted Machine   
+  (Interactive SVG: Nodes float gently, splitting animations are physically simulated, active edges glow)
 
-STRING SIMULATOR
+STRING SIMULATOR (Bottom Drawer)
   Input: [ 101101 ]
   [Step] [Play] [Pause] [Reset]
   Current State: q1 | Current Input: 1 | Output: 0
+  (Animation: Data pulses traveling along transition arrows)
 
 VALIDATION
   Input | Original | Converted | Result   (table of test cases)
@@ -118,7 +123,7 @@ frontend/
 ## 7. Step-by-step Visualization Strategy
 - The Python API will return a `steps` array along with the final converted machine.
 - Each step object will contain a description and the specific `highlight_nodes`/`highlight_edges`.
-- The JS frontend will use these steps to walk through the logic, updating the SVG DOM classes (e.g., `.active`, `.processing`) to highlight the relevant parts of the diagram during playback.
+- **D3.js & GSAP Engine**: The JS frontend will use these steps to orchestrate complex animations. Instead of just changing CSS classes, we will physically animate nodes splitting apart, slide edges to their new targets, and pulse paths to show state/output mappings.
 
 ## 8. Equivalence-Testing Strategy
 - We will establish an explicit **Output-Alignment Convention**: Moore machines output a pre-input value at the initial state. The simulator will drop the first character of the Moore output string (or visually separate it) to align it perfectly with the Mealy output string for 1:1 validation.
