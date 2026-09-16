@@ -17,18 +17,14 @@ def health_check():
     """Simple API health check endpoint."""
     return jsonify({"status": "ok", "message": "Moore-Mealy Backend is running!"})
 
-@app.route('/api/validate', methods=['POST'])
-def validate_machine():
-    """API Contract: Validates a machine against all theoretical rules."""
-    # TODO: Implement in Phase 6
-    return jsonify({"valid": True, "errors": []})
-
+from backend.validation.validator import validate_machine
+from backend.simulation.simulator import simulate_machine
 from backend.serialization.json_serializer import deserialize_machine, serialize_machine
 from backend.algorithms.moore_to_mealy import convert_moore_to_mealy
 from backend.algorithms.mealy_to_moore import convert_mealy_to_moore
 
 @app.route('/api/convert', methods=['POST'])
-def convert_machine():
+def api_convert_machine():
     """API Contract: Converts a machine and returns the result + animation steps."""
     try:
         data = request.json.get('machine')
@@ -54,11 +50,38 @@ def convert_machine():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route('/api/validate', methods=['POST'])
+def api_validate_machine():
+    """API Contract: Validates a machine against all theoretical rules."""
+    try:
+        data = request.json.get('machine')
+        machine = deserialize_machine(data)
+        errors = validate_machine(machine)
+        
+        if errors:
+            return jsonify({"valid": False, "errors": errors})
+        return jsonify({"valid": True, "errors": []})
+    except Exception as e:
+        return jsonify({"valid": False, "errors": [str(e)]}), 400
+
 @app.route('/api/simulate', methods=['POST'])
-def simulate_string():
+def api_simulate_string():
     """API Contract: Simulates a string on the machine step-by-step."""
-    # TODO: Implement in Phase 6
-    return jsonify({"path": [], "output_string": "", "final_state": ""})
+    try:
+        data = request.json.get('machine')
+        input_string = request.json.get('input_string', "")
+        
+        machine = deserialize_machine(data)
+        
+        # Ensure it's valid before simulating
+        errors = validate_machine(machine)
+        if errors:
+            return jsonify({"error": "Cannot simulate an invalid machine.", "validation_errors": errors}), 400
+            
+        result = simulate_machine(machine, input_string)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 if __name__ == '__main__':
     # Run the Flask app on port 5000
