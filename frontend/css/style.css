@@ -1,0 +1,53 @@
+/* Custom adjustments that go beyond Tailwind's utilities */
+
+/* Glassmorphism utility enhancements */
+.glass-panel {
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 40%);
+    pointer-events: none;
+}
+
+/* SVG D3.js Styling */
+.node circle {
+    fill: #1e293b;
+    stroke: #38bdf8;
+    stroke-width: 2px;
+    transition: all 0.3s ease;
+}
+
+.node text {
+    fill: #f3f4f6;
+    font-family: monospace;
+    font-size: 14px;
+    text-anchor: middle;
+    dominant-baseline: central;
+}
+
+.link {
+    fill: none;
+    stroke: #475569;
+    stroke-width: 2px;
+}
+
+/* Glow effects for active states */
+.node.active circle {
+    stroke: #0ea5e9;
+    fill: rgba(14, 165, 233, 0.2);
+    filter: drop-shadow(0 0 8px rgba(14,165,233,0.8));
+}
+
+.link.active {
+    stroke: #0ea5e9;
+    stroke-width: 3px;
+    filter: drop-shadow(0 0 5px rgba(14,165,233,0.8));
+}

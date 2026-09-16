@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moore ↔ Mealy Machine Simulator</title>
+    
+    <!-- Tailwind CSS (CDN for zero-build setup) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#0f172a',
+                            panel: '#1e293b',
+                            accent: '#38bdf8',
+                            glow: '#0ea5e9'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-cyber-bg text-gray-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-cyber-accent selection:text-cyber-bg">
+
+    <div id="app-container" class="max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8 opacity-0">
+        <!-- Header -->
+        <header class="text-center space-y-2">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyber-accent to-blue-500 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">
+                Moore ↔ Mealy Machine Simulator
+            </h1>
+            <p class="text-gray-400 text-lg">Interactive Automata Theory Conversion & Visualization</p>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Left Column: Inputs & Controls -->
+            <div class="lg:col-span-4 flex flex-col gap-6">
+                
+                <!-- Machine Type Toggle -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-200">Machine Type</h2>
+                    <div class="flex rounded-lg bg-gray-900/50 p-1">
+                        <button class="flex-1 py-2 rounded-md bg-cyber-accent/20 text-cyber-accent shadow-[0_0_10px_rgba(56,189,248,0.2)] transition-all font-medium">Moore → Mealy</button>
+                        <button class="flex-1 py-2 rounded-md text-gray-400 hover:text-gray-200 transition-all font-medium">Mealy → Moore</button>
+                    </div>
+                </div>
+
+                <!-- Input Machine Configuration -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-200 flex justify-between items-center">
+                        Input Machine
+                        <button class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded border border-gray-600 transition-colors">Demo Example</button>
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <!-- Placeholder for dynamic inputs -->
+                        <div class="p-4 border border-dashed border-gray-600 rounded bg-gray-800/30 text-center text-gray-400">
+                            Machine definition UI will render here
+                        </div>
+                        
+                        <div class="flex gap-4 pt-4">
+                            <button class="flex-1 py-3 rounded-lg bg-gray-700 hover:bg-gray-600 border border-gray-600 transition-all font-bold tracking-wide">Validate</button>
+                            <button class="flex-1 py-3 rounded-lg bg-cyber-accent hover:bg-cyber-glow text-cyber-bg shadow-[0_0_15px_rgba(56,189,248,0.4)] transition-all font-bold tracking-wide">Convert</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conversion Steps Panel -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-200">Conversion Steps</h2>
+                    <div class="p-4 border border-gray-700 rounded bg-gray-900/50 min-h-[100px] flex items-center justify-center text-gray-500">
+                        Awaiting conversion...
+                    </div>
+                    <div class="flex justify-between mt-4">
+                        <button class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Previous</button>
+                        <button class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Play</button>
+                        <button class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Next</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Visualization & Simulation -->
+            <div class="lg:col-span-8 flex flex-col gap-6">
+                
+                <!-- Visualization Stage -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl flex-1 min-h-[400px] flex flex-col">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-200">Visualization</h2>
+                        <div class="flex gap-2">
+                            <span class="text-sm px-3 py-1 bg-gray-800 rounded-full border border-gray-600">Original</span>
+                            <span class="text-sm px-3 py-1 bg-cyber-accent/20 text-cyber-accent rounded-full border border-cyber-accent/30">Converted</span>
+                        </div>
+                    </div>
+                    <!-- SVG Container for D3 -->
+                    <div id="d3-container" class="flex-1 bg-gray-900/50 rounded-lg border border-gray-700 overflow-hidden relative">
+                        <div class="absolute inset-0 flex items-center justify-center text-gray-500">
+                            State Machine Graph will render here
+                        </div>
+                    </div>
+                </div>
+
+                <!-- String Simulator -->
+                <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-200">String Simulator</h2>
+                    <div class="flex gap-4 items-center">
+                        <input type="text" placeholder="Enter input string (e.g. 101101)" class="flex-1 bg-gray-900 border border-gray-700 rounded px-4 py-2 focus:outline-none focus:border-cyber-accent transition-colors text-white font-mono">
+                        <button class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded transition-colors">Simulate</button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- GSAP for UI Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <!-- D3.js for Graph Physics & Rendering -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <!-- Custom Scripts -->
+    <script src="/js/app.js"></script>
+    <!-- We will gradually include: api.js, machineInput.js, visualization.js, conversionSteps.js, simulator.js, validation.js -->
+
+</body>
+</html>
