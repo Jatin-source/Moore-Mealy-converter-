@@ -51,8 +51,8 @@
                 <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
                     <h2 class="text-xl font-semibold mb-4 text-gray-200">Machine Type</h2>
                     <div class="flex rounded-lg bg-gray-900/50 p-1">
-                        <button class="flex-1 py-2 rounded-md bg-cyber-accent/20 text-cyber-accent shadow-[0_0_10px_rgba(56,189,248,0.2)] transition-all font-medium">Moore → Mealy</button>
-                        <button class="flex-1 py-2 rounded-md text-gray-400 hover:text-gray-200 transition-all font-medium">Mealy → Moore</button>
+                        <button id="btn-moore-to-mealy" class="flex-1 py-2 rounded-md bg-cyber-accent/20 text-cyber-accent shadow-[0_0_10px_rgba(56,189,248,0.2)] transition-all font-medium">Moore → Mealy</button>
+                        <button id="btn-mealy-to-moore" class="flex-1 py-2 rounded-md text-gray-400 hover:text-gray-200 transition-all font-medium">Mealy → Moore</button>
                     </div>
                 </div>
 
@@ -60,18 +60,17 @@
                 <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
                     <h2 class="text-xl font-semibold mb-4 text-gray-200 flex justify-between items-center">
                         Input Machine
-                        <button class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded border border-gray-600 transition-colors">Demo Example</button>
+                        <button id="btn-demo" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded border border-gray-600 transition-colors">Demo Example</button>
                     </h2>
                     
                     <div class="space-y-4">
-                        <!-- Placeholder for dynamic inputs -->
-                        <div class="p-4 border border-dashed border-gray-600 rounded bg-gray-800/30 text-center text-gray-400">
+                        <div id="machine-def-container" class="p-4 border border-dashed border-gray-600 rounded bg-gray-800/30 text-center text-gray-400">
                             Machine definition UI will render here
                         </div>
                         
                         <div class="flex gap-4 pt-4">
-                            <button class="flex-1 py-3 rounded-lg bg-gray-700 hover:bg-gray-600 border border-gray-600 transition-all font-bold tracking-wide">Validate</button>
-                            <button class="flex-1 py-3 rounded-lg bg-cyber-accent hover:bg-cyber-glow text-cyber-bg shadow-[0_0_15px_rgba(56,189,248,0.4)] transition-all font-bold tracking-wide">Convert</button>
+                            <button id="btn-validate" class="flex-1 py-3 rounded-lg bg-gray-700 hover:bg-gray-600 border border-gray-600 transition-all font-bold tracking-wide">Validate</button>
+                            <button id="btn-convert" class="flex-1 py-3 rounded-lg bg-cyber-accent hover:bg-cyber-glow text-cyber-bg shadow-[0_0_15px_rgba(56,189,248,0.4)] transition-all font-bold tracking-wide">Convert</button>
                         </div>
                     </div>
                 </div>
@@ -79,13 +78,13 @@
                 <!-- Conversion Steps Panel -->
                 <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
                     <h2 class="text-xl font-semibold mb-4 text-gray-200">Conversion Steps</h2>
-                    <div class="p-4 border border-gray-700 rounded bg-gray-900/50 min-h-[100px] flex items-center justify-center text-gray-500">
+                    <div id="steps-display" class="p-4 border border-gray-700 rounded bg-gray-900/50 min-h-[100px] flex items-center justify-center text-gray-500 font-mono text-sm">
                         Awaiting conversion...
                     </div>
                     <div class="flex justify-between mt-4">
-                        <button class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Previous</button>
-                        <button class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Play</button>
-                        <button class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Next</button>
+                        <button id="btn-step-prev" class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Previous</button>
+                        <button id="btn-step-play" class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Play</button>
+                        <button id="btn-step-next" class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Next</button>
                     </div>
                 </div>
 
@@ -106,7 +105,7 @@
                     <!-- SVG Container for D3 -->
                     <div id="d3-container" class="flex-1 bg-gray-900/50 rounded-lg border border-gray-700 overflow-hidden relative">
                         <div class="absolute inset-0 flex items-center justify-center text-gray-500">
-                            State Machine Graph will render here
+                            State Machine Graph will render here (Phase 8)
                         </div>
                     </div>
                 </div>
@@ -115,8 +114,10 @@
                 <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
                     <h2 class="text-xl font-semibold mb-4 text-gray-200">String Simulator</h2>
                     <div class="flex gap-4 items-center">
-                        <input type="text" placeholder="Enter input string (e.g. 101101)" class="flex-1 bg-gray-900 border border-gray-700 rounded px-4 py-2 focus:outline-none focus:border-cyber-accent transition-colors text-white font-mono">
-                        <button class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded transition-colors">Simulate</button>
+                        <input type="text" id="sim-input" placeholder="Enter input string (e.g. 101101)" class="flex-1 bg-gray-900 border border-gray-700 rounded px-4 py-2 focus:outline-none focus:border-cyber-accent transition-colors text-white font-mono">
+                        <button id="btn-simulate" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded transition-colors">Simulate</button>
+                    </div>
+                    <div id="sim-output" class="mt-4 p-3 bg-gray-900/50 border border-gray-700 rounded font-mono text-sm text-gray-400 hidden">
                     </div>
                 </div>
 
@@ -131,8 +132,10 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
 
     <!-- Custom Scripts -->
+    <script src="/js/api.js"></script>
+    <script src="/js/machineInput.js"></script>
+    <script src="/js/conversionSteps.js"></script>
+    <script src="/js/simulator.js"></script>
     <script src="/js/app.js"></script>
-    <!-- We will gradually include: api.js, machineInput.js, visualization.js, conversionSteps.js, simulator.js, validation.js -->
-
 </body>
 </html>
