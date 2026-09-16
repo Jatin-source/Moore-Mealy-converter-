@@ -25,6 +25,7 @@ def validate_machine():
 
 from backend.serialization.json_serializer import deserialize_machine, serialize_machine
 from backend.algorithms.moore_to_mealy import convert_moore_to_mealy
+from backend.algorithms.mealy_to_moore import convert_mealy_to_moore
 
 @app.route('/api/convert', methods=['POST'])
 def convert_machine():
@@ -42,8 +43,11 @@ def convert_machine():
                 "steps": steps
             })
         elif machine.type == 'mealy' and target_type == 'moore':
-            # TODO: Implement Mealy -> Moore in Phase 5
-            return jsonify({"error": "Mealy to Moore not yet implemented."}), 501
+            converted, steps = convert_mealy_to_moore(machine)
+            return jsonify({
+                "converted_machine": serialize_machine(converted),
+                "steps": steps
+            })
         else:
             return jsonify({"error": "Invalid conversion requested."}), 400
             
