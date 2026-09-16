@@ -23,11 +23,32 @@ def validate_machine():
     # TODO: Implement in Phase 6
     return jsonify({"valid": True, "errors": []})
 
+from backend.serialization.json_serializer import deserialize_machine, serialize_machine
+from backend.algorithms.moore_to_mealy import convert_moore_to_mealy
+
 @app.route('/api/convert', methods=['POST'])
 def convert_machine():
     """API Contract: Converts a machine and returns the result + animation steps."""
-    # TODO: Implement in Phase 4 & 5
-    return jsonify({"converted_machine": {}, "steps": []})
+    try:
+        data = request.json.get('machine')
+        target_type = request.json.get('target_type')
+        
+        machine = deserialize_machine(data)
+        
+        if machine.type == 'moore' and target_type == 'mealy':
+            converted, steps = convert_moore_to_mealy(machine)
+            return jsonify({
+                "converted_machine": serialize_machine(converted),
+                "steps": steps
+            })
+        elif machine.type == 'mealy' and target_type == 'moore':
+            # TODO: Implement Mealy -> Moore in Phase 5
+            return jsonify({"error": "Mealy to Moore not yet implemented."}), 501
+        else:
+            return jsonify({"error": "Invalid conversion requested."}), 400
+            
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/api/simulate', methods=['POST'])
 def simulate_string():
