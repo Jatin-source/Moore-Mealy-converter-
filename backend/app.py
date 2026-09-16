@@ -1,5 +1,5 @@
 import os
-from flask import Flask, send_from_directory, jsonify
+from flask import Flask, send_from_directory, jsonify, request
 
 # Point Flask's static and template folders to the frontend directory
 # This allows us to serve the frontend purely from the Flask app without needing Node.js
@@ -16,6 +16,24 @@ def index():
 def health_check():
     """Simple API health check endpoint."""
     return jsonify({"status": "ok", "message": "Moore-Mealy Backend is running!"})
+
+@app.route('/api/validate', methods=['POST'])
+def validate_machine():
+    """API Contract: Validates a machine against all theoretical rules."""
+    # TODO: Implement in Phase 6
+    return jsonify({"valid": True, "errors": []})
+
+@app.route('/api/convert', methods=['POST'])
+def convert_machine():
+    """API Contract: Converts a machine and returns the result + animation steps."""
+    # TODO: Implement in Phase 4 & 5
+    return jsonify({"converted_machine": {}, "steps": []})
+
+@app.route('/api/simulate', methods=['POST'])
+def simulate_string():
+    """API Contract: Simulates a string on the machine step-by-step."""
+    # TODO: Implement in Phase 6
+    return jsonify({"path": [], "output_string": "", "final_state": ""})
 
 if __name__ == '__main__':
     # Run the Flask app on port 5000
