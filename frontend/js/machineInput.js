@@ -383,9 +383,8 @@ class MachineInput {
                         this.machineType = parsed.type || 'moore';
                         this.states = parsed.states;
                         this.inputAlphabet = parsed.alphabet;
-                        this.outputAlphabet = parsed.outputAlphabet || Object.values(parsed.outputs || {}) || ['0', '1'];
-                        this.initialState = parsed.initialState || parsed.states[0];
-                        this.outputs = parsed.outputs || {};
+                        this.outputs = parsed.outputs || parsed.stateOutputs || {};
+                        this.outputAlphabet = parsed.outputAlphabet || (Object.values(this.outputs).length ? [...new Set(Object.values(this.outputs))] : ['0', '1']);
                         this.transitions = parsed.transitions || [];
                         this.currentPresetId = "custom";
 

@@ -13,8 +13,9 @@ def deserialize_machine(data: Dict[str, Any]) -> Union[MooreMachine, MealyMachin
     initial_state = State(data.get('initialState', ''))
     
     if machine_type == 'moore':
-        outputs = {State(k): v for k, v in data.get('outputs', {}).items()}
-        output_alphabet = list(set(outputs.values()))
+        raw_outputs = data.get('outputs') or data.get('stateOutputs') or {}
+        outputs = {State(k): str(v) for k, v in raw_outputs.items()}
+        output_alphabet = data.get('outputAlphabet') or list(set(outputs.values()))
         transitions = [
             Transition(
                 from_state=State(t['from']),

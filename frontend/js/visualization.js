@@ -2,12 +2,15 @@
  * Interactive D3.js Visualization Engine
  * Features:
  * - Robust handling of state machines of any size (5, 9, 15+ states)
- * - Safe D3 force layout: isolates self-loops from forceLink to prevent division-by-zero explosions
- * - Clamps node coordinates so states never fly off screen or behind badges
- * - Initial state indicator: textbook Automata incoming "Start" arrow + fixed golden border (NO roaming/spinning ring)
+ * - Safe D3 force layout: separates self-loops from forceLink to prevent division-by-zero explosions
+ * - Properly terminates previous simulations on re-render to avoid memory leaks / tick competition
+ * - Positions nodes immediately upon creation and during ticks with boundary clamping
+ * - Initial state indicator: textbook Automata incoming "Start" arrow + fixed golden border
  * - Combines parallel transitions (e.g. 0 and 1) between same source and target to avoid visual overlap
  * - Distinct styling for Moore (state / output in circle) and Mealy (input / output on arrow)
  * - Multi-view mode: Original View, Converted View, and Side-by-Side Dual View
+ * - Supports both "outputs" and "stateOutputs" property formats
+ * - Safe label bounding box calculation that never crashes the tick loop
  * - Zoom & Pan with reset controls
  */
 class VisualizationEngine {
@@ -118,6 +121,14 @@ class VisualizationEngine {
     }
 
     render() {
+        // Stop any active simulations to prevent memory leaks and tick competition
+        if (this.graphA && this.graphA.simulation) {
+            this.graphA.simulation.stop();
+        }
+        if (this.graphB && this.graphB.simulation) {
+            this.graphB.simulation.stop();
+        }
+
         const container = d3.select(`#${this.containerId}`);
         container.selectAll("*").remove();
 
@@ -134,13 +145,19 @@ class VisualizationEngine {
             divA.append("div")
                 .attr("class", "absolute top-2 left-3 z-10 text-[11px] font-mono font-bold text-sky-400 bg-sky-950/80 px-2.5 py-1 rounded-md border border-sky-500/40 backdrop-blur-sm")
                 .text(`ORIGINAL (${this.originalMachine.type.toUpperCase()}) • ${this.originalMachine.states.length} States`);
-            const svgA = divA.append("svg").attr("width", "100%").attr("height", "100%");
+            const svgA = divA.append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("viewBox", `0 0 ${halfWidth} ${height}`);
 
             const divB = wrap.append("div").attr("class", "relative w-full h-full flex flex-col");
             divB.append("div")
                 .attr("class", "absolute top-2 left-3 z-10 text-[11px] font-mono font-bold text-purple-400 bg-purple-950/80 px-2.5 py-1 rounded-md border border-purple-500/40 backdrop-blur-sm")
                 .text(`CONVERTED (${this.convertedMachine.type.toUpperCase()}) • ${this.convertedMachine.states.length} States`);
-            const svgB = divB.append("svg").attr("width", "100%").attr("height", "100%");
+            const svgB = divB.append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .attr("viewBox", `0 0 ${halfWidth} ${height}`);
 
             this.graphA = this.mountGraph(svgA, this.originalMachine, halfWidth, height, 'orig');
             this.graphB = this.mountGraph(svgB, this.convertedMachine, halfWidth, height, 'conv');
@@ -208,13 +225,16 @@ class VisualizationEngine {
         // Zoom Layer
         const gMain = svgSelection.append("g").attr("class", "zoom-layer");
         const zoomBehavior = d3.zoom()
-            .scaleExtent([0.4, 2.5])
+            .scaleExtent([0.3, 2.5])
             .on("zoom", (event) => {
                 gMain.attr("transform", event.transform);
             });
         svgSelection.call(zoomBehavior);
 
-        // 1. Build Nodes with seeded radial positions around center
+        // 1. Resolve State Outputs safely (supports outputs or stateOutputs)
+        const rawOutputs = machine.outputs || machine.stateOutputs || {};
+
+        // 2. Build Nodes with seeded radial positions around center
         const numStates = machine.states.length;
         const radius = Math.min(width, height) * 0.33;
         const angleStep = (2 * Math.PI) / (numStates || 1);
@@ -224,7 +244,7 @@ class VisualizationEngine {
             return {
                 id: s,
                 name: s,
-                output: (machine.type === 'moore' && machine.outputs) ? machine.outputs[s] : null,
+                output: machine.type === 'moore' ? (rawOutputs[s] !== undefined ? rawOutputs[s] : null) : null,
                 isInitial: (s === machine.initialState),
                 x: width / 2 + Math.cos(angle) * radius,
                 y: height / 2 + Math.sin(angle) * radius
@@ -233,8 +253,7 @@ class VisualizationEngine {
 
         const nodeMap = new Map(nodes.map(n => [n.id, n]));
 
-        // 2. Group Transitions between same source and target to combine labels cleanly
-        // key: "from->to"
+        // 3. Group Transitions between same source and target to combine labels cleanly
         const groupedTransitions = new Map();
 
         (machine.transitions || []).forEach(t => {
@@ -254,7 +273,7 @@ class VisualizationEngine {
                 });
             }
 
-            const itemLabel = (machine.type === 'mealy' && t.output !== undefined)
+            const itemLabel = (machine.type === 'mealy' && t.output !== undefined && t.output !== null)
                 ? `${t.input}/${t.output}`
                 : `${t.input}`;
 
@@ -266,7 +285,6 @@ class VisualizationEngine {
         });
 
         const links = [];
-        let linkCounter = 0;
 
         groupedTransitions.forEach((grp, key) => {
             const reverseKey = `${grp.to}->${grp.from}`;
@@ -284,21 +302,24 @@ class VisualizationEngine {
                 label: combinedLabel,
                 items: grp.items
             });
-            linkCounter++;
         });
 
-        // 3. D3 Force Simulation
-        // CRITICAL: NEVER pass self-loops into d3.forceLink because (source === target) causes distance 0 division-by-zero!
-        const nonSelfLinks = links.filter(l => !l.isSelfLoop);
+        // 4. Force simulation links
+        // We pass string IDs to d3.forceLink so D3 resolves them to nodes via .id(d => d.id)
+        const forceLinks = links.filter(l => !l.isSelfLoop).map(l => ({
+            source: l.source.id,
+            target: l.target.id,
+            ref: l
+        }));
 
         const simulation = d3.forceSimulation(nodes)
-            .force("link", d3.forceLink(nonSelfLinks).id(d => d.id).distance(120).strength(0.45))
-            .force("charge", d3.forceManyBody().strength(-350))
+            .force("link", d3.forceLink(forceLinks).id(d => d.id).distance(115).strength(0.5))
+            .force("charge", d3.forceManyBody().strength(-320))
             .force("center", d3.forceCenter(width / 2, height / 2).strength(0.08))
-            .force("collide", d3.forceCollide().radius(36))
+            .force("collide", d3.forceCollide().radius(35))
             .alphaDecay(0.04);
 
-        // 4. Draw Links
+        // 5. Draw Links
         const linkGroup = gMain.append("g").attr("class", "links");
         const linkElements = linkGroup.selectAll("path")
             .data(links)
@@ -310,7 +331,7 @@ class VisualizationEngine {
             .attr("fill", "none")
             .attr("marker-end", `url(#${prefix}-end)`);
 
-        // 5. Draw Link Labels
+        // 6. Draw Link Labels
         const labelGroup = gMain.append("g").attr("class", "link-labels");
         const labelElements = labelGroup.selectAll("g")
             .data(links)
@@ -321,7 +342,11 @@ class VisualizationEngine {
             .attr("fill", "#090d16")
             .attr("stroke", "#1e293b")
             .attr("stroke-width", 1)
-            .attr("rx", 4);
+            .attr("rx", 4)
+            .attr("x", d => -(d.label.length * 3.5 + 4))
+            .attr("y", -8)
+            .attr("width", d => d.label.length * 7 + 8)
+            .attr("height", 16);
 
         labelElements.append("text")
             .attr("class", "font-mono font-bold text-[11px]")
@@ -330,13 +355,14 @@ class VisualizationEngine {
             .attr("dy", "0.3em")
             .text(d => d.label);
 
-        // 6. Draw Nodes
+        // 7. Draw Nodes
         const nodeGroup = gMain.append("g").attr("class", "nodes");
         const nodeElements = nodeGroup.selectAll("g")
             .data(nodes)
             .join("g")
             .attr("class", "node cursor-grab active:cursor-grabbing")
             .attr("id", d => `${prefix}-node-${d.id}`)
+            .attr("transform", d => `translate(${d.x}, ${d.y})`) // SET IMMEDIATE INITIAL POSITION
             .call(this.drag(simulation));
 
         // Node Main Body
@@ -363,38 +389,58 @@ class VisualizationEngine {
                 return d.name;
             });
 
-        // 7. Initial State Indicator Arrow ("Start" -> q0)
+        // 8. Initial State Indicator Arrow ("Start" -> q0)
         const initialNode = nodes.find(n => n.isInitial);
         let startArrow = null;
         let startLabel = null;
 
         if (initialNode) {
+            const sx = initialNode.x - 46;
+            const sy = initialNode.y;
+            const ex = initialNode.x - 22;
+            const ey = initialNode.y;
+
             startArrow = gMain.append("path")
                 .attr("class", "start-pointer")
                 .attr("stroke", "#f59e0b")
                 .attr("stroke-width", 2.5)
                 .attr("fill", "none")
+                .attr("d", `M ${sx} ${sy} L ${ex} ${ey}`)
                 .attr("marker-end", `url(#${prefix}-start-arrow)`);
 
             startLabel = gMain.append("text")
                 .attr("class", "font-mono font-bold text-[10px]")
                 .attr("fill", "#f59e0b")
                 .attr("text-anchor", "middle")
+                .attr("x", sx + 5)
+                .attr("y", sy - 8)
                 .text("Start");
         }
 
-        // 8. Simulation Tick Loop
+        // 9. Simulation Tick Loop
         simulation.on("tick", () => {
-            // Keep all nodes clamped inside the visible viewport
+            // A. Keep all nodes clamped inside the visible viewport
             nodes.forEach(d => {
                 d.x = Math.max(35, Math.min(width - 35, d.x));
                 d.y = Math.max(45, Math.min(height - 35, d.y));
             });
 
-            // Update Link Paths
+            // B. Move Nodes FIRST so positions are always updated even if a label check errs
+            nodeElements.attr("transform", d => `translate(${d.x}, ${d.y})`);
+
+            // C. Move Start Arrow
+            if (initialNode && startArrow && startLabel) {
+                const sx = initialNode.x - 46;
+                const sy = initialNode.y;
+                const ex = initialNode.x - 22;
+                const ey = initialNode.y;
+                startArrow.attr("d", `M ${sx} ${sy} L ${ex} ${ey}`);
+                startLabel.attr("x", sx + 5).attr("y", sy - 8);
+            }
+
+            // D. Update Link Paths
             linkElements.attr("d", d => {
                 if (d.isSelfLoop) {
-                    // Smooth loop arc over node
                     const x = d.source.x;
                     const y = d.source.y;
                     return `M ${x - 12} ${y - 16} A 20 20 0 1 1 ${x + 12} ${y - 16}`;
@@ -405,22 +451,19 @@ class VisualizationEngine {
                 const dr = Math.sqrt(dx * dx + dy * dy);
 
                 if (d.hasOpposite) {
-                    // Curve reciprocal links so they don't overlap
                     return `M ${d.source.x} ${d.source.y} A ${dr * 1.15} ${dr * 1.15} 0 0,1 ${d.target.x} ${d.target.y}`;
                 }
 
-                // Straight or subtle curve
                 return `M ${d.source.x} ${d.source.y} L ${d.target.x} ${d.target.y}`;
             });
 
-            // Update Label Positions
+            // E. Update Label Positions
             labelElements.attr("transform", d => {
                 if (d.isSelfLoop) {
                     return `translate(${d.source.x}, ${d.source.y - 42})`;
                 }
 
                 if (d.hasOpposite) {
-                    // Arc midpoint
                     const mx = (d.source.x + d.target.x) / 2;
                     const my = (d.source.y + d.target.y) / 2;
                     const dx = d.target.x - d.source.x;
@@ -436,30 +479,6 @@ class VisualizationEngine {
                 const my = (d.source.y + d.target.y) / 2;
                 return `translate(${mx}, ${my - 5})`;
             });
-
-            // Fit label background boxes
-            labelElements.each(function () {
-                const text = d3.select(this).select("text");
-                const bbox = text.node().getBBox();
-                d3.select(this).select("rect")
-                    .attr("x", bbox.x - 4)
-                    .attr("y", bbox.y - 2)
-                    .attr("width", bbox.width + 8)
-                    .attr("height", bbox.height + 4);
-            });
-
-            // Move Nodes
-            nodeElements.attr("transform", d => `translate(${d.x}, ${d.y})`);
-
-            // Move Start Arrow
-            if (initialNode && startArrow && startLabel) {
-                const sx = initialNode.x - 46;
-                const sy = initialNode.y;
-                const ex = initialNode.x - 22;
-                const ey = initialNode.y;
-                startArrow.attr("d", `M ${sx} ${sy} L ${ex} ${ey}`);
-                startLabel.attr("x", sx + 5).attr("y", sy - 8);
-            }
         });
 
         return {
@@ -577,19 +596,19 @@ class VisualizationEngine {
     }
 
     zoom(scaleFactor) {
-        if (this.graphA) {
+        if (this.graphA && this.graphA.svg && this.graphA.zoomBehavior) {
             this.graphA.svg.transition().duration(250).call(this.graphA.zoomBehavior.scaleBy, scaleFactor);
         }
-        if (this.graphB) {
+        if (this.graphB && this.graphB.svg && this.graphB.zoomBehavior) {
             this.graphB.svg.transition().duration(250).call(this.graphB.zoomBehavior.scaleBy, scaleFactor);
         }
     }
 
     resetZoom() {
-        if (this.graphA) {
+        if (this.graphA && this.graphA.svg && this.graphA.zoomBehavior) {
             this.graphA.svg.transition().duration(300).call(this.graphA.zoomBehavior.transform, d3.zoomIdentity);
         }
-        if (this.graphB) {
+        if (this.graphB && this.graphB.svg && this.graphB.zoomBehavior) {
             this.graphB.svg.transition().duration(300).call(this.graphB.zoomBehavior.transform, d3.zoomIdentity);
         }
     }
