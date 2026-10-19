@@ -28,3 +28,29 @@ def test_moore_simulation_initial_output():
     assert result_00["output_string"] == "aba"
     assert result_00["final_state"] == "q0"
     assert len(result_00["path"]) == 3
+
+def test_verify_equivalence_moore_and_mealy():
+    from backend.algorithms.moore_to_mealy import convert_moore_to_mealy
+    from backend.simulation.simulator import verify_equivalence
+    
+    moore = MooreMachine(
+        states=[State('q0'), State('q1')],
+        input_alphabet=['0', '1'],
+        output_alphabet=['0', '1'],
+        initial_state=State('q0'),
+        outputs={State('q0'): '0', State('q1'): '1'},
+        transitions=[
+            Transition(State('q0'), '0', State('q1')),
+            Transition(State('q0'), '1', State('q0')),
+            Transition(State('q1'), '0', State('q1')),
+            Transition(State('q1'), '1', State('q0'))
+        ]
+    )
+    
+    mealy, _ = convert_moore_to_mealy(moore)
+    
+    report = verify_equivalence(moore, mealy, ["0", "1", "0101", "11001", ""])
+    assert report["all_matched"] is True
+    assert report["total"] == 5
+    assert report["passed"] == 5
+

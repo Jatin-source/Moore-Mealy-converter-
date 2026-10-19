@@ -63,3 +63,55 @@ def simulate_machine(machine: Union[MooreMachine, MealyMachine], input_string: s
         "path": path,
         "final_state": current_state.name
     }
+
+def verify_equivalence(machine_a: Union[MooreMachine, MealyMachine], machine_b: Union[MooreMachine, MealyMachine], test_strings: list[str]) -> Dict[str, Any]:
+    """
+    Verifies equivalence between two machines across multiple test strings,
+    adhering to the Automata Theory Moore-Mealy Output Alignment Convention.
+    """
+    results = []
+    passed = 0
+    
+    for s in test_strings:
+        res_a = simulate_machine(machine_a, s)
+        res_b = simulate_machine(machine_b, s)
+        
+        out_a = res_a["output_string"]
+        out_b = res_b["output_string"]
+        
+        # Determine alignment based on machine types
+        if machine_a.type == 'moore' and machine_b.type == 'mealy':
+            aligned_a = out_a[1:] if len(out_a) > 0 else ""
+            aligned_b = out_b
+            convention_note = f"Moore initial output '{out_a[:1]}' omitted from aligned comparison."
+        elif machine_a.type == 'mealy' and machine_b.type == 'moore':
+            aligned_a = out_a
+            aligned_b = out_b[1:] if len(out_b) > 0 else ""
+            convention_note = f"Moore initial output '{out_b[:1]}' omitted from aligned comparison."
+        else:
+            aligned_a = out_a
+            aligned_b = out_b
+            convention_note = "Direct 1:1 comparison (identical machine architectures)."
+            
+        is_match = (aligned_a == aligned_b)
+        if is_match:
+            passed += 1
+            
+        results.append({
+            "input_string": s,
+            "original_output": out_a,
+            "converted_output": out_b,
+            "aligned_original": aligned_a,
+            "aligned_converted": aligned_b,
+            "match": is_match,
+            "convention_note": convention_note
+        })
+        
+    return {
+        "results": results,
+        "total": len(test_strings),
+        "passed": passed,
+        "all_matched": (passed == len(test_strings)),
+        "convention": "Moore machine emits an initial output at q0 before input arrives; this leading symbol is excluded in aligned equivalence testing."
+    }
+

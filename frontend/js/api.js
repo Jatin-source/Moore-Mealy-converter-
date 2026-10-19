@@ -29,6 +29,14 @@ const API = {
 
     async simulate(machine, inputString) {
         return this.request('/api/simulate', { machine, input_string: inputString });
+    },
+
+    async batchTest(originalMachine, convertedMachine, testStrings) {
+        return this.request('/api/batch_test', { 
+            original_machine: originalMachine, 
+            converted_machine: convertedMachine, 
+            test_strings: testStrings 
+        });
     }
 };
 

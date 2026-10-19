@@ -23,7 +23,7 @@ def health_check():
     return jsonify({"status": "ok", "message": "Moore-Mealy Backend is running!"})
 
 from backend.validation.validator import validate_machine
-from backend.simulation.simulator import simulate_machine
+from backend.simulation.simulator import simulate_machine, verify_equivalence
 from backend.serialization.json_serializer import deserialize_machine, serialize_machine
 from backend.algorithms.moore_to_mealy import convert_moore_to_mealy
 from backend.algorithms.mealy_to_moore import convert_mealy_to_moore
@@ -85,6 +85,22 @@ def api_simulate_string():
             
         result = simulate_machine(machine, input_string)
         return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/api/batch_test', methods=['POST'])
+def api_batch_test():
+    """API Contract: Compares original and converted machine on batch test strings."""
+    try:
+        data_a = request.json.get('original_machine')
+        data_b = request.json.get('converted_machine')
+        test_strings = request.json.get('test_strings', [])
+        
+        machine_a = deserialize_machine(data_a)
+        machine_b = deserialize_machine(data_b)
+        
+        report = verify_equivalence(machine_a, machine_b, test_strings)
+        return jsonify(report)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 

@@ -16,8 +16,8 @@
                 extend: {
                     colors: {
                         cyber: {
-                            bg: '#0f172a',
-                            panel: '#1e293b',
+                            bg: '#090d16',
+                            panel: '#151d30',
                             accent: '#38bdf8',
                             glow: '#0ea5e9'
                         }
@@ -32,97 +32,387 @@
 </head>
 <body class="bg-cyber-bg text-gray-100 min-h-screen font-sans antialiased overflow-x-hidden selection:bg-cyber-accent selection:text-cyber-bg">
 
-    <div id="app-container" class="max-w-7xl mx-auto px-4 py-8 flex flex-col gap-8 opacity-0">
+    <div id="app-container" class="max-w-[1440px] mx-auto px-4 py-6 flex flex-col gap-6 opacity-0">
+        
         <!-- Header -->
-        <header class="text-center space-y-2">
-            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyber-accent to-blue-500 drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]">
-                Moore ↔ Mealy Machine Simulator
-            </h1>
-            <p class="text-gray-400 text-lg">Interactive Automata Theory Conversion & Visualization</p>
+        <header class="flex flex-col md:flex-row items-center justify-between gap-4 pb-4 border-b border-gray-800">
+            <div>
+                <div class="flex items-center gap-3">
+                    <span class="p-2 rounded-xl bg-cyber-accent/15 border border-cyber-accent/30 text-cyber-accent text-xl">⚡</span>
+                    <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyber-accent via-sky-300 to-indigo-400 drop-shadow-[0_0_20px_rgba(56,189,248,0.4)]">
+                        Moore ↔ Mealy Machine Simulator
+                    </h1>
+                </div>
+                <p class="text-gray-400 text-sm mt-1">Interactive Automata Theory Conversion, State-Splitting & Visual Simulation Engine</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button id="btn-open-theory-modal" class="px-4 py-2 rounded-xl bg-gray-800/80 hover:bg-gray-700 text-gray-200 border border-gray-700 transition flex items-center gap-2 text-sm font-medium shadow-md hover:border-cyber-accent/50">
+                    <span>📖</span> <span>Theory & Viva Guide</span>
+                </button>
+            </div>
         </header>
 
-        <!-- Main Content Grid -->
-        <main class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            
-            <!-- Left Column: Inputs & Controls -->
-            <div class="lg:col-span-4 flex flex-col gap-6">
-                
-                <!-- Machine Type Toggle -->
-                <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-200">Machine Type</h2>
-                    <div class="flex rounded-lg bg-gray-900/50 p-1">
-                        <button id="btn-moore-to-mealy" class="flex-1 py-2 rounded-md bg-cyber-accent/20 text-cyber-accent shadow-[0_0_10px_rgba(56,189,248,0.2)] transition-all font-medium">Moore → Mealy</button>
-                        <button id="btn-mealy-to-moore" class="flex-1 py-2 rounded-md text-gray-400 hover:text-gray-200 transition-all font-medium">Mealy → Moore</button>
-                    </div>
-                </div>
+        <!-- Presets Bar -->
+        <div class="glass-panel p-4 rounded-2xl border border-gray-800 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
+                <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5 whitespace-nowrap">
+                    <span>💡</span> Automata Presets:
+                </span>
+                <select id="preset-select" class="w-full sm:w-auto bg-gray-900 border border-gray-700 text-cyber-accent font-semibold text-sm rounded-xl px-4 py-2 focus:border-cyber-accent outline-none shadow-inner cursor-pointer">
+                    <option value="state_splitting_demo">1. State Splitting Demo (Mealy → Moore) [★ Headline Edge Case]</option>
+                    <option value="ones_complement">2. 1's Complement Inverter (Mealy)</option>
+                    <option value="twos_complement">3. 2's Complement Generator (Mealy)</option>
+                    <option value="even_parity">4. Even Parity Detector (Moore)</option>
+                    <option value="sequence_101_detector">5. '101' Sequence Detector (Moore)</option>
+                    <option value="sequence_110_detector">6. '110' Sequence Detector (Mealy)</option>
+                    <option value="modulo_3_counter">7. Modulo 3 Binary Remainder (Moore)</option>
+                    <option value="custom">✦ Custom User Machine</option>
+                </select>
+            </div>
 
-                <!-- Input Machine Configuration -->
-                <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-200 flex justify-between items-center">
-                        Input Machine
-                        <button id="btn-demo" class="text-sm bg-gray-800 hover:bg-gray-700 px-3 py-1 rounded border border-gray-600 transition-colors">Demo Example</button>
-                    </h2>
+            <div id="target-type-badge" class="text-xs font-mono text-gray-400 bg-gray-900/60 px-3 py-1.5 rounded-lg border border-gray-800">
+                Target: Moore Machine (State Splitting if needed)
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Column: Inputs & Machine Customizer -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                
+                <!-- Machine Definition Panel -->
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 shadow-xl flex flex-col gap-5">
                     
-                    <div class="space-y-4">
-                        <div id="machine-def-container" class="p-4 border border-dashed border-gray-600 rounded bg-gray-800/30 text-center text-gray-400">
-                            Machine definition UI will render here
-                        </div>
-                        
-                        <div class="flex gap-4 pt-4">
-                            <button id="btn-validate" class="flex-1 py-3 rounded-lg bg-gray-700 hover:bg-gray-600 border border-gray-600 transition-all font-bold tracking-wide">Validate</button>
-                            <button id="btn-convert" class="flex-1 py-3 rounded-lg bg-cyber-accent hover:bg-cyber-glow text-cyber-bg shadow-[0_0_15px_rgba(56,189,248,0.4)] transition-all font-bold tracking-wide">Convert</button>
+                    <!-- Machine Type Switcher -->
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex rounded-xl bg-gray-900/80 p-1 border border-gray-800 w-full">
+                            <button id="btn-moore-to-mealy" class="flex-1 py-2 rounded-lg text-gray-400 hover:text-gray-200 border border-transparent font-medium text-sm transition-all">Moore → Mealy</button>
+                            <button id="btn-mealy-to-moore" class="flex-1 py-2 rounded-lg bg-cyber-accent/20 text-cyber-accent border border-cyber-accent/40 shadow-[0_0_12px_rgba(56,189,248,0.25)] font-semibold text-sm transition-all">Mealy → Moore</button>
                         </div>
                     </div>
+
+                    <!-- Editor Mode Tabs -->
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                        <div class="flex gap-2">
+                            <button id="tab-btn-visual" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 text-cyber-accent border border-gray-700 transition">⚡ Visual Table Editor</button>
+                            <button id="tab-btn-json" class="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-200 transition">{ } JSON Code</button>
+                        </div>
+                        <button id="btn-reset-machine" class="text-xs text-gray-500 hover:text-gray-300 transition">⟲ Reset</button>
+                    </div>
+
+                    <!-- VISUAL TABLE EDITOR CONTAINER -->
+                    <div id="visual-editor-container" class="space-y-4">
+                        
+                        <!-- States Manager -->
+                        <div class="space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="font-semibold text-gray-300">States (Q):</span>
+                                <div class="flex items-center gap-1">
+                                    <input type="text" id="new-state-input" placeholder="e.g. q3" class="w-16 bg-gray-900 border border-gray-700 rounded px-2 py-0.5 text-xs text-white font-mono focus:border-cyber-accent outline-none">
+                                    <button onclick="window.machineInput.addState(document.getElementById('new-state-input').value); document.getElementById('new-state-input').value='';" class="px-2 py-0.5 bg-gray-800 hover:bg-gray-700 text-cyber-accent rounded text-xs border border-gray-700 font-bold transition">+ State</button>
+                                </div>
+                            </div>
+                            <div id="states-badge-list" class="flex flex-wrap gap-1.5 p-2 bg-gray-900/40 rounded-xl border border-gray-800/80 min-h-[38px] items-center">
+                                <!-- Rendered dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Alphabets Row -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <!-- Input Alphabet (Σ) -->
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-semibold text-gray-300">Input Alphabet (Σ):</span>
+                                    <div class="flex items-center gap-1">
+                                        <input type="text" id="new-input-sym" placeholder="a" maxlength="2" class="w-10 bg-gray-900 border border-gray-700 rounded px-1.5 py-0.5 text-xs text-white font-mono text-center focus:border-cyber-accent outline-none">
+                                        <button onclick="window.machineInput.addInputSymbol(document.getElementById('new-input-sym').value); document.getElementById('new-input-sym').value='';" class="px-1.5 py-0.5 bg-gray-800 hover:bg-gray-700 text-emerald-400 rounded text-xs border border-gray-700 font-bold transition">+</button>
+                                    </div>
+                                </div>
+                                <div id="inputs-badge-list" class="flex flex-wrap gap-1.5 p-1.5 bg-gray-900/40 rounded-xl border border-gray-800/80 min-h-[34px] items-center">
+                                    <!-- Rendered dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Output Alphabet (Δ) -->
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="font-semibold text-gray-300">Output Alphabet (Δ):</span>
+                                    <div class="flex items-center gap-1">
+                                        <input type="text" id="new-output-sym" placeholder="0" maxlength="2" class="w-10 bg-gray-900 border border-gray-700 rounded px-1.5 py-0.5 text-xs text-white font-mono text-center focus:border-cyber-accent outline-none">
+                                        <button onclick="window.machineInput.addOutputSymbol(document.getElementById('new-output-sym').value); document.getElementById('new-output-sym').value='';" class="px-1.5 py-0.5 bg-gray-800 hover:bg-gray-700 text-purple-400 rounded text-xs border border-gray-700 font-bold transition">+</button>
+                                    </div>
+                                </div>
+                                <div id="outputs-badge-list" class="flex flex-wrap gap-1.5 p-1.5 bg-gray-900/40 rounded-xl border border-gray-800/80 min-h-[34px] items-center">
+                                    <!-- Rendered dynamically -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Initial State Selector -->
+                        <div class="flex items-center justify-between text-xs p-2.5 rounded-xl bg-gray-900/40 border border-gray-800/80">
+                            <span class="font-semibold text-amber-300 flex items-center gap-1.5">
+                                <span>★</span> Initial State (q₀):
+                            </span>
+                            <select id="initial-state-select" class="bg-gray-900 border border-gray-700 text-amber-300 font-mono text-xs rounded-lg px-3 py-1 focus:border-amber-400 outline-none">
+                                <!-- Options rendered dynamically -->
+                            </select>
+                        </div>
+
+                        <!-- Transition Table -->
+                        <div class="space-y-1.5">
+                            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Transition / Output Table:</span>
+                            <div id="transition-table-container">
+                                <!-- Dynamic editable table rendered here -->
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- JSON CODE EDITOR CONTAINER (Hidden by default) -->
+                    <div id="json-editor-container" class="hidden space-y-2">
+                        <textarea id="machine-json-editor" rows="13" class="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 text-xs text-emerald-400 font-mono focus:border-cyber-accent outline-none shadow-inner leading-relaxed"></textarea>
+                        <p class="text-[11px] text-gray-500">Edit JSON directly to modify states or transitions. Updates are synchronized live with the graph.</p>
+                    </div>
+
+                    <!-- Validation Feedback Banner -->
+                    <div id="validation-feedback" class="hidden"></div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3 pt-1">
+                        <button id="btn-validate" class="flex-1 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 transition font-semibold text-xs tracking-wide shadow-md flex items-center justify-center gap-1.5">
+                            <span>🛡</span> <span>Validate Machine</span>
+                        </button>
+                        <button id="btn-convert" class="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs tracking-wide shadow-[0_0_20px_rgba(56,189,248,0.4)] transition flex items-center justify-center gap-1.5">
+                            <span>⚡</span> <span>Convert Machine</span>
+                        </button>
+                    </div>
+
                 </div>
 
                 <!-- Conversion Steps Panel -->
-                <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-200">Conversion Steps</h2>
-                    <div id="steps-display" class="p-4 border border-gray-700 rounded bg-gray-900/50 min-h-[100px] flex items-center justify-center text-gray-500 font-mono text-sm">
-                        Awaiting conversion...
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 shadow-xl flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wider flex items-center gap-2">
+                            <span>🪜</span> Conversion Step-by-Step Logic
+                        </h2>
                     </div>
-                    <div class="flex justify-between mt-4">
-                        <button id="btn-step-prev" class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Previous</button>
-                        <button id="btn-step-play" class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Play</button>
-                        <button id="btn-step-next" class="px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 text-sm">Next</button>
+                    <div id="steps-display" class="p-3.5 border border-gray-800 rounded-xl bg-gray-950/70 min-h-[90px] flex items-center text-xs text-gray-400 font-mono">
+                        Awaiting conversion. Select a preset and hit "Convert Machine" to walk through the algorithm.
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <button id="btn-step-prev" class="px-3.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-medium border border-gray-700 transition">◀ Previous</button>
+                        <button id="btn-step-play" class="px-4 py-1.5 bg-cyber-accent/20 hover:bg-cyber-accent/30 text-cyber-accent rounded-lg text-xs font-bold border border-cyber-accent/40 transition">▶ Play</button>
+                        <button id="btn-step-next" class="px-3.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-medium border border-gray-700 transition">Next ▶</button>
                     </div>
                 </div>
 
             </div>
 
-            <!-- Right Column: Visualization & Simulation -->
-            <div class="lg:col-span-8 flex flex-col gap-6">
+            <!-- Right Column: Visualization, String Simulation & Equivalence Testing -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
                 
                 <!-- Visualization Stage -->
-                <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl flex-1 min-h-[400px] flex flex-col">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-semibold text-gray-200">Visualization</h2>
-                        <div class="flex gap-2">
-                            <span class="text-sm px-3 py-1 bg-gray-800 rounded-full border border-gray-600">Original</span>
-                            <span class="text-sm px-3 py-1 bg-cyber-accent/20 text-cyber-accent rounded-full border border-cyber-accent/30">Converted</span>
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 shadow-xl flex flex-col min-h-[460px]">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Automata State Graph</span>
+                            <!-- View mode tabs -->
+                            <div class="flex rounded-lg bg-gray-900/80 p-0.5 border border-gray-800 text-xs">
+                                <button id="view-tab-orig" class="px-3 py-1 rounded-md bg-cyber-accent/20 text-cyber-accent border border-cyber-accent/40 font-semibold transition">Original</button>
+                                <button id="view-tab-conv" class="px-3 py-1 rounded-md text-gray-400 hover:text-gray-200 transition opacity-50 pointer-events-none">Converted</button>
+                                <button id="view-tab-dual" class="px-3 py-1 rounded-md text-gray-400 hover:text-gray-200 transition opacity-50 pointer-events-none">⧉ Dual View</button>
+                            </div>
+                        </div>
+
+                        <!-- Zoom controls -->
+                        <div class="flex items-center gap-1 bg-gray-900/80 p-1 rounded-lg border border-gray-800 text-xs">
+                            <button id="btn-zoom-in" class="w-6 h-6 flex items-center justify-center hover:bg-gray-800 text-gray-300 rounded font-bold" title="Zoom In">+</button>
+                            <button id="btn-zoom-out" class="w-6 h-6 flex items-center justify-center hover:bg-gray-800 text-gray-300 rounded font-bold" title="Zoom Out">-</button>
+                            <button id="btn-zoom-reset" class="px-2 h-6 flex items-center justify-center hover:bg-gray-800 text-gray-400 hover:text-gray-200 rounded text-[11px]" title="Reset View">Reset</button>
                         </div>
                     </div>
-                    <!-- SVG Container for D3 -->
-                    <div id="d3-container" class="flex-1 bg-gray-900/50 rounded-lg border border-gray-700 overflow-hidden relative">
-                        <div class="absolute inset-0 flex items-center justify-center text-gray-500">
-                            State Machine Graph will render here (Phase 8)
-                        </div>
+
+                    <!-- D3 SVG Container -->
+                    <div id="d3-container" class="flex-1 bg-gray-950/70 rounded-xl border border-gray-800 overflow-hidden relative min-h-[380px]">
+                        <!-- Rendered by D3.js -->
                     </div>
                 </div>
 
                 <!-- String Simulator -->
-                <div class="glass-panel p-6 rounded-2xl border border-gray-700/50 bg-cyber-panel/80 backdrop-blur-md shadow-xl">
-                    <h2 class="text-xl font-semibold mb-4 text-gray-200">String Simulator</h2>
-                    <div class="flex gap-4 items-center">
-                        <input type="text" id="sim-input" placeholder="Enter input string (e.g. 101101)" class="flex-1 bg-gray-900 border border-gray-700 rounded px-4 py-2 focus:outline-none focus:border-cyber-accent transition-colors text-white font-mono">
-                        <button id="btn-simulate" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded transition-colors">Simulate</button>
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 shadow-xl flex flex-col gap-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wider flex items-center gap-2">
+                            <span>▶</span> Interactive String Simulation & Tape Head
+                        </h2>
+                        <!-- Speed slider -->
+                        <div class="flex items-center gap-2 text-xs text-gray-400">
+                            <span>Speed:</span>
+                            <input type="range" id="sim-speed-slider" min="100" max="1900" value="1500" class="w-24 accent-cyber-accent cursor-pointer">
+                        </div>
                     </div>
-                    <div id="sim-output" class="mt-4 p-3 bg-gray-900/50 border border-gray-700 rounded font-mono text-sm text-gray-400 hidden">
+
+                    <!-- Input Expression & Quick Samples -->
+                    <div class="space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" id="sim-input" value="01011" placeholder="Enter input expression (e.g. 01011)" class="flex-1 bg-gray-950 border border-gray-700 rounded-xl px-4 py-2 font-mono text-sm text-cyan-300 focus:border-cyber-accent outline-none shadow-inner">
+                            <button id="btn-sim-load" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-xl text-xs font-semibold border border-gray-700 transition">Prepare</button>
+                            <button id="btn-sim-random" class="px-3 py-2 bg-gray-800 hover:bg-gray-700 text-cyber-accent rounded-xl text-xs font-bold border border-gray-700 transition" title="Generate Random String">🎲 Random</button>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <span>Quick expressions:</span>
+                            <button class="sample-chip px-2 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-300 font-mono text-[11px] border border-gray-700" data-expr="01011">01011</button>
+                            <button class="sample-chip px-2 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-300 font-mono text-[11px] border border-gray-700" data-expr="11001">11001</button>
+                            <button class="sample-chip px-2 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-300 font-mono text-[11px] border border-gray-700" data-expr="101101">101101</button>
+                            <button class="sample-chip px-2 py-0.5 rounded bg-gray-800/80 hover:bg-gray-700 text-gray-300 font-mono text-[11px] border border-gray-700" data-expr="00101">00101</button>
+                        </div>
+                    </div>
+
+                    <!-- Visual Tape Container -->
+                    <div class="space-y-1">
+                        <span class="text-[11px] uppercase tracking-wider text-gray-500 font-semibold">Reading Tape:</span>
+                        <div id="sim-tape-container" class="flex gap-2 overflow-x-auto p-2 bg-gray-950/70 rounded-xl border border-gray-800 min-h-[56px] items-center">
+                            <span class="text-gray-500 italic text-xs">Enter an expression above and click Prepare.</span>
+                        </div>
+                    </div>
+
+                    <!-- Step Info & Output Stream -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="p-3 bg-gray-950/70 border border-gray-800 rounded-xl flex flex-col justify-center min-h-[50px]">
+                            <div id="sim-step-info" class="text-xs text-gray-400">
+                                Simulation ready. Hit Play or Step Forward.
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-gray-950/70 border border-gray-800 rounded-xl flex flex-col justify-center min-h-[50px]">
+                            <div class="text-[10px] text-gray-500 uppercase font-semibold mb-1">Emitted Output Sequence:</div>
+                            <div id="sim-output-stream" class="flex flex-wrap gap-1 items-center font-mono text-xs">
+                                <span class="text-gray-500 italic text-xs">Awaiting execution...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Playback Controls -->
+                    <div class="flex items-center justify-between pt-1 border-t border-gray-800/70">
+                        <div class="flex items-center gap-2">
+                            <button id="btn-sim-step-back" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-semibold border border-gray-700 transition disabled:opacity-50">⏮ Prev</button>
+                            <button id="btn-sim-play" class="px-5 py-1.5 bg-cyber-accent hover:bg-cyber-glow text-cyber-bg rounded-lg text-xs font-extrabold shadow-[0_0_15px_rgba(56,189,248,0.4)] transition flex items-center gap-1.5 disabled:opacity-50">
+                                <span>▶</span> <span>Play</span>
+                            </button>
+                            <button id="btn-sim-step-fwd" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-semibold border border-gray-700 transition disabled:opacity-50">Step ⏭</button>
+                            <button id="btn-sim-reset" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 rounded-lg text-xs font-medium border border-gray-700 transition disabled:opacity-50">⏹ Reset</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Section 11: Equivalence & Batch Testing Suite -->
+                <div class="glass-panel p-5 rounded-2xl border border-gray-800 shadow-xl flex flex-col gap-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <h2 class="text-sm font-semibold text-gray-200 uppercase tracking-wider flex items-center gap-2">
+                                <span>🧪</span> Equivalence & Batch Verification Suite (M2 Rubric)
+                            </h2>
+                            <p class="text-xs text-gray-400 mt-0.5">Automated side-by-side execution proving both machines are mathematically equivalent.</p>
+                        </div>
+                        <button id="btn-run-batch-test" class="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center gap-1">
+                            <span>⚡</span> <span>Run Test Suite</span>
+                        </button>
+                    </div>
+
+                    <div id="batch-test-container">
+                        <div class="text-center py-6 text-gray-500 text-xs">
+                            Convert a machine above to unlock automated batch equivalence verification.
+                        </div>
                     </div>
                 </div>
 
             </div>
         </main>
+    </div>
+
+    <!-- Theory & Viva Guide Modal -->
+    <div id="theory-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel max-w-3xl w-full max-h-[85vh] overflow-y-auto rounded-3xl border border-gray-700 p-6 md:p-8 space-y-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-4 border-b border-gray-800">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">📖</span>
+                    <h3 class="text-2xl font-bold text-cyber-accent">Automata Theory & Viva Defense Guide</h3>
+                </div>
+                <button id="btn-close-theory-modal" class="text-gray-400 hover:text-white text-2xl font-bold">×</button>
+            </div>
+
+            <!-- Content -->
+            <div class="space-y-5 text-sm text-gray-300 leading-relaxed font-sans">
+                
+                <div class="p-4 rounded-2xl bg-gray-900/80 border border-gray-800">
+                    <h4 class="font-bold text-white mb-2 text-base flex items-center gap-2">
+                        <span class="text-cyan-400">1. Formal Automata 6-Tuple Definitions</span>
+                    </h4>
+                    <p class="font-mono text-xs text-cyan-200 bg-gray-950 p-2.5 rounded-lg border border-gray-800 mb-2">
+                        M = (Q, Σ, Δ, δ, λ, q₀)
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-xs">
+                        <li><strong>Q:</strong> Finite set of states</li>
+                        <li><strong>Σ:</strong> Input alphabet</li>
+                        <li><strong>Δ:</strong> Output alphabet</li>
+                        <li><strong>δ:</strong> State transition function $Q \times \Sigma \to Q$</li>
+                        <li><strong>Moore λ:</strong> State output function $Q \to \Delta$ (output depends <em>only on state</em>)</li>
+                        <li><strong>Mealy λ:</strong> Transition output function $Q \times \Sigma \to \Delta$ (output depends <em>on state & input symbol</em>)</li>
+                        <li><strong>q₀:</strong> Initial start state</li>
+                    </ul>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-gray-900/80 border border-gray-800">
+                    <h4 class="font-bold text-white mb-2 text-base flex items-center gap-2">
+                        <span class="text-emerald-400">2. The Headline Edge Case: State Splitting</span>
+                    </h4>
+                    <p class="text-xs">
+                        In a Mealy machine, different transitions entering the same state $q$ can carry different outputs (e.g. $q_0 \xrightarrow{0/0} q_1$ and $q_2 \xrightarrow{1/1} q_1$).
+                        Because a Moore state can only have <strong>one single output</strong>, $q_1$ cannot be both '0' and '1'.
+                        Therefore, $q_1$ must split into distinct states: <code>q1_0</code> and <code>q1_1</code>. Outgoing transitions from $q_1$ are duplicated for both split states!
+                    </p>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-gray-900/80 border border-gray-800">
+                    <h4 class="font-bold text-white mb-2 text-base flex items-center gap-2">
+                        <span class="text-amber-400">3. The Output Alignment Convention</span>
+                    </h4>
+                    <p class="text-xs">
+                        For an input string of length $n$:
+                    </p>
+                    <ul class="list-disc list-inside space-y-1 text-xs mt-1">
+                        <li><strong>Moore output length:</strong> $n + 1$ (emits initial state output at $q_0$ before any symbol is consumed).</li>
+                        <li><strong>Mealy output length:</strong> $n$ (emits outputs only upon taking transitions).</li>
+                    </ul>
+                    <p class="text-xs mt-2 text-amber-200/90 bg-amber-950/20 p-2.5 rounded-lg border border-amber-500/30">
+                        <strong>Convention:</strong> In aligned equivalence verification, the Moore machine's leading output symbol at $q_0$ is treated as a pre-input response and excluded from comparison, resulting in exact 1:1 match with Mealy.
+                    </p>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-gray-900/80 border border-gray-800">
+                    <h4 class="font-bold text-white mb-2 text-base flex items-center gap-2">
+                        <span class="text-purple-400">4. Top Viva Examination Questions & Answers</span>
+                    </h4>
+                    <div class="space-y-3 text-xs">
+                        <div class="p-2.5 rounded-lg bg-gray-950 border border-gray-800">
+                            <strong class="text-purple-300">Q: Why does Moore → Mealy preserve the state count?</strong>
+                            <p class="text-gray-400 mt-1">A: Because each Moore state has a fixed output, we can simply place that output onto all transitions entering that state. No states need to be split or duplicated.</p>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-gray-950 border border-gray-800">
+                            <strong class="text-purple-300">Q: What is the upper bound on states when converting Mealy → Moore?</strong>
+                            <p class="text-gray-400 mt-1">A: At most $|Q_{Mealy}| \times |\Delta|$. In the worst case, every Mealy state is reached by all possible output symbols.</p>
+                        </div>
+                        <div class="p-2.5 rounded-lg bg-gray-950 border border-gray-800">
+                            <strong class="text-purple-300">Q: How do you handle a Mealy initial state with no incoming transitions?</strong>
+                            <p class="text-gray-400 mt-1">A: Our algorithm deterministically assigns the default output (the first symbol in the output alphabet) to ensure the Moore initial state is well-defined.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
     <!-- GSAP for UI Animations -->
@@ -131,12 +421,14 @@
     <!-- D3.js for Graph Physics & Rendering -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
 
-    <!-- Custom Scripts -->
+    <!-- Application Scripts -->
+    <script src="/js/presets.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/machineInput.js"></script>
     <script src="/js/visualization.js"></script>
     <script src="/js/conversionSteps.js"></script>
     <script src="/js/simulator.js"></script>
+    <script src="/js/batchTester.js"></script>
     <script src="/js/app.js"></script>
 </body>
 </html>
