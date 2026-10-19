@@ -20,7 +20,7 @@
 .glass-panel {
     position: relative;
     overflow: hidden;
-    background: rgba(30, 41, 59, 0.75);
+    background: rgba(21, 29, 48, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -38,53 +38,21 @@
 }
 
 /* SVG D3.js Styling */
-.node circle {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.node circle.main-circle {
+    transition: stroke 0.25s ease, stroke-width 0.25s ease, filter 0.25s ease;
 }
 
 .node text {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    user-select: none;
+    pointer-events: none;
 }
 
 .link {
     transition: stroke 0.25s ease, stroke-width 0.25s ease;
 }
 
-/* Animated initial state rotating dashed ring */
-@keyframes spin-slow {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-.animate-spin-slow {
-    animation: spin-slow 16s linear infinite;
-    transform-origin: center;
-}
-
-/* Tape head pointer transition */
+/* Tape head styling */
 .tape-cell {
     user-select: none;
-}
-
-/* Pulse animation for active nodes */
-@keyframes ring-pulse {
-    0% {
-        transform: scale(0.95);
-        opacity: 0.8;
-    }
-    50% {
-        transform: scale(1.15);
-        opacity: 0.3;
-    }
-    100% {
-        transform: scale(0.95);
-        opacity: 0.8;
-    }
-}
-
-.active-pulse {
-    animation: ring-pulse 1.5s infinite;
 }
