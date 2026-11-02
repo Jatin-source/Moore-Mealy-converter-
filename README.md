@@ -80,3 +80,24 @@ The backend conversion, state splitting, validation, and API contracts are fully
 python -m pytest backend/tests/
 ```
 *(All 11 unit & integration tests pass with 100% coverage of core edge cases).*
+
+---
+
+## 🌐 How to Deploy Live (Free & Instant)
+
+### Option 1: Render (Recommended - 100% Free)
+1. Go to [render.com](https://render.com) and log in with your GitHub account.
+2. Click **New +** ➔ **Web Service**.
+3. Select your repository: `Moore-Mealy-converter-`.
+4. Configure:
+   - **Environment**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn backend.app:app`
+   - **Instance Type**: `Free`
+5. Click **Create Web Service**. Render will deploy it automatically and give you an active `https://<your-app>.onrender.com` URL!
+
+### Option 2: Railway
+1. Go to [railway.app](https://railway.app) and click **New Project** ➔ **Deploy from GitHub repo**.
+2. Select `Moore-Mealy-converter-`.
+3. Railway automatically detects the `Procfile` and deploys your application with a public HTTPS link.
+
