@@ -2,6 +2,13 @@
 
 A premium, interactive Automata Theory simulator designed to convert, customize, and visually simulate Moore and Mealy machines.
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-38bdf8?style=for-the-badge&logo=render&logoColor=white)](https://moore-mealy-converter.onrender.com/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Jatin-source/Moore-Mealy-converter-)
+
+🔗 **Live Deployment URL**: [https://moore-mealy-converter.onrender.com/](https://moore-mealy-converter.onrender.com/)
+
+---
+
 ## 🚀 Key Features
 
 ### 1. Interactive Machine Customizer
@@ -83,9 +90,15 @@ python -m pytest backend/tests/
 
 ---
 
-## 🌐 How to Deploy Live (Free & Instant)
+## 🌐 Live Deployment & Hosting
 
-### Option 1: Render (Recommended - 100% Free)
+### 🟢 Production Deployment (Active)
+- **Live URL**: [https://moore-mealy-converter.onrender.com/](https://moore-mealy-converter.onrender.com/)
+- **Hosting Provider**: Render (Free Web Service)
+- **CI/CD**: Auto-deploys on every `git push` to `main`.
+
+### Deploy Your Own Instance:
+#### Option 1: Render (Recommended - 100% Free)
 1. Go to [render.com](https://render.com) and log in with your GitHub account.
 2. Click **New +** ➔ **Web Service**.
 3. Select your repository: `Moore-Mealy-converter-`.
@@ -94,10 +107,11 @@ python -m pytest backend/tests/
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `gunicorn backend.app:app`
    - **Instance Type**: `Free`
-5. Click **Create Web Service**. Render will deploy it automatically and give you an active `https://<your-app>.onrender.com` URL!
+5. Click **Create Web Service**. Render will deploy it automatically!
 
-### Option 2: Railway
+#### Option 2: Railway
 1. Go to [railway.app](https://railway.app) and click **New Project** ➔ **Deploy from GitHub repo**.
 2. Select `Moore-Mealy-converter-`.
 3. Railway automatically detects the `Procfile` and deploys your application with a public HTTPS link.
+
 
