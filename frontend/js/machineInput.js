@@ -150,6 +150,13 @@ class MachineInput {
     }
 
     setEditorTab(tab) {
+        if (tab === 'visual' && this.activeEditorTab === 'json') {
+            try {
+                this.syncFromJSONEditorIfActive();
+            } catch (err) {
+                console.warn("Could not sync invalid JSON to visual table:", err);
+            }
+        }
         this.activeEditorTab = tab;
         const tabVisual = document.getElementById('tab-btn-visual');
         const tabJson = document.getElementById('tab-btn-json');
@@ -379,27 +386,72 @@ class MachineInput {
             textarea.oninput = (e) => {
                 try {
                     const parsed = JSON.parse(e.target.value);
-                    if (parsed.states && parsed.alphabet) {
-                        this.machineType = parsed.type || 'moore';
-                        this.states = parsed.states;
-                        this.inputAlphabet = parsed.alphabet;
-                        this.outputs = parsed.outputs || parsed.stateOutputs || {};
-                        this.outputAlphabet = parsed.outputAlphabet || (Object.values(this.outputs).length ? [...new Set(Object.values(this.outputs))] : ['0', '1']);
-                        this.transitions = parsed.transitions || [];
-                        this.currentPresetId = "custom";
-
-                        const presetSelect = document.getElementById('preset-select');
-                        if (presetSelect) presetSelect.value = "custom";
-
-                        this.updateTypeButtonsUI();
-                        this.renderBadges();
-                        this.renderInitialStateDropdown();
-                        this.notifyMachineUpdated();
+                    if (parsed && (parsed.states || parsed.transitions)) {
+                        this.applyParsedJSON(parsed);
                     }
                 } catch (err) {
-                    // Waiting for user to complete JSON
+                    // Waiting for user to complete JSON syntax
                 }
             };
+        }
+    }
+
+    applyParsedJSON(parsed) {
+        const rawType = (parsed.type || '').toLowerCase();
+        const finalStatesList = parsed.finalStates || parsed.acceptStates;
+        const isDfa = rawType === 'dfa' || (finalStatesList !== undefined && finalStatesList !== null);
+
+        this.states = [...(parsed.states || [])];
+        this.inputAlphabet = [...(parsed.alphabet || [])];
+        this.initialState = parsed.initialState || (this.states[0] || 'q0');
+        this.transitions = JSON.parse(JSON.stringify(parsed.transitions || []));
+
+        if (isDfa) {
+            this.machineType = 'moore';
+            const finalSet = new Set(finalStatesList || []);
+            this.outputs = {};
+            this.states.forEach(s => {
+                this.outputs[s] = finalSet.has(s) ? '1' : '0';
+            });
+            this.outputAlphabet = parsed.outputAlphabet || ['0', '1'];
+        } else if (rawType === 'mealy' || this.transitions.some(t => t.output !== undefined && t.output !== null)) {
+            this.machineType = 'mealy';
+            delete this.outputs;
+            const inferredOutputs = [...new Set(this.transitions.map(t => t.output).filter(Boolean))];
+            this.outputAlphabet = parsed.outputAlphabet || (inferredOutputs.length ? inferredOutputs : ['0', '1']);
+        } else {
+            this.machineType = 'moore';
+            this.outputs = parsed.outputs || parsed.stateOutputs || {};
+            this.states.forEach(s => {
+                if (this.outputs[s] === undefined) this.outputs[s] = '0';
+            });
+            const outVals = Object.values(this.outputs);
+            this.outputAlphabet = parsed.outputAlphabet || (outVals.length ? [...new Set(outVals)] : ['0', '1']);
+        }
+
+        this.currentPresetId = "custom";
+        const presetSelect = document.getElementById('preset-select');
+        if (presetSelect) presetSelect.value = "custom";
+
+        this.updateTypeButtonsUI();
+        this.renderBadges();
+        this.renderInitialStateDropdown();
+        this.notifyMachineUpdated();
+    }
+
+    syncFromJSONEditorIfActive() {
+        if (this.activeEditorTab === 'json') {
+            const textarea = document.getElementById('machine-json-editor');
+            if (textarea && textarea.value.trim()) {
+                try {
+                    const parsed = JSON.parse(textarea.value);
+                    if (parsed && (parsed.states || parsed.transitions)) {
+                        this.applyParsedJSON(parsed);
+                    }
+                } catch (err) {
+                    throw new Error(`JSON Syntax Error: ${err.message}`);
+                }
+            }
         }
     }
 
@@ -575,6 +627,7 @@ class MachineInput {
     async validate() {
         const feedbackEl = document.getElementById('validation-feedback');
         try {
+            this.syncFromJSONEditorIfActive();
             const result = await window.API.validate(this.getMachineJSON());
             if (feedbackEl) {
                 feedbackEl.classList.remove('hidden');
@@ -603,6 +656,7 @@ class MachineInput {
     async convert() {
         const feedbackEl = document.getElementById('validation-feedback');
         try {
+            this.syncFromJSONEditorIfActive();
             const targetType = this.machineType === 'moore' ? 'mealy' : 'moore';
             const result = await window.API.convert(this.getMachineJSON(), targetType);
 

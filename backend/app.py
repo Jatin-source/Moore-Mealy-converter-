@@ -33,24 +33,44 @@ def api_convert_machine():
     """API Contract: Converts a machine and returns the result + animation steps."""
     try:
         data = request.json.get('machine')
-        target_type = request.json.get('target_type')
+        target_type = (request.json.get('target_type') or '').lower()
         
         machine = deserialize_machine(data)
         
-        if machine.type == 'moore' and target_type == 'mealy':
+        if machine.type == 'moore' and (target_type == 'mealy' or not target_type):
             converted, steps = convert_moore_to_mealy(machine)
             return jsonify({
                 "converted_machine": serialize_machine(converted),
                 "steps": steps
             })
-        elif machine.type == 'mealy' and target_type == 'moore':
+        elif machine.type == 'mealy' and (target_type == 'moore' or not target_type):
             converted, steps = convert_mealy_to_moore(machine)
             return jsonify({
                 "converted_machine": serialize_machine(converted),
                 "steps": steps
             })
+        elif machine.type == 'moore' and target_type == 'moore':
+            return jsonify({
+                "converted_machine": serialize_machine(machine),
+                "steps": [{
+                    "step": 1,
+                    "description": "DFA mapped to equivalent Moore machine with binary outputs (1 for final states, 0 for non-final states).",
+                    "highlight_nodes": [s.name for s in machine.states if machine.outputs.get(s) == '1'],
+                    "highlight_edges": []
+                }]
+            })
+        elif machine.type == 'mealy' and target_type == 'mealy':
+            return jsonify({
+                "converted_machine": serialize_machine(machine),
+                "steps": [{
+                    "step": 1,
+                    "description": "Machine is already a Mealy machine.",
+                    "highlight_nodes": [],
+                    "highlight_edges": []
+                }]
+            })
         else:
-            return jsonify({"error": "Invalid conversion requested."}), 400
+            return jsonify({"error": f"Invalid conversion requested: from {machine.type} to {target_type}."}), 400
             
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -67,7 +87,7 @@ def api_validate_machine():
             return jsonify({"valid": False, "errors": errors})
         return jsonify({"valid": True, "errors": []})
     except Exception as e:
-        return jsonify({"valid": False, "errors": [str(e)]}), 400
+        return jsonify({"valid": False, "errors": [str(e)]})
 
 @app.route('/api/simulate', methods=['POST'])
 def api_simulate_string():

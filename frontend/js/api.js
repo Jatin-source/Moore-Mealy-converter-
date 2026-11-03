@@ -10,7 +10,8 @@ const API = {
             });
             const data = await response.json();
             if (!response.ok) {
-                throw new Error(data.error || 'API Request Failed');
+                const errMsg = data.error || (data.errors && data.errors.length ? data.errors.join('; ') : 'API Request Failed');
+                throw new Error(errMsg);
             }
             return data;
         } catch (error) {

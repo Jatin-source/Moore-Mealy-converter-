@@ -244,7 +244,7 @@ class VisualizationEngine {
             return {
                 id: s,
                 name: s,
-                output: machine.type === 'moore' ? (rawOutputs[s] !== undefined ? rawOutputs[s] : null) : null,
+                output: machine.type !== 'mealy' ? (rawOutputs[s] !== undefined ? rawOutputs[s] : null) : null,
                 isInitial: (s === machine.initialState),
                 x: width / 2 + Math.cos(angle) * radius,
                 y: height / 2 + Math.sin(angle) * radius
@@ -372,9 +372,18 @@ class VisualizationEngine {
             .attr("fill", "#151d30")
             .attr("stroke", d => {
                 if (d.isInitial) return "#f59e0b"; // Gold for initial state
-                return machine.type === 'moore' ? "#38bdf8" : "#a855f7";
+                return machine.type === 'mealy' ? "#a855f7" : "#38bdf8";
             })
             .attr("stroke-width", d => d.isInitial ? 3 : 2);
+
+        // Double circle for accepting states (DFA / Moore with output '1')
+        nodeElements.filter(d => machine.type !== 'mealy' && (d.output === '1' || (machine.finalStates && machine.finalStates.includes(d.name))))
+            .append("circle")
+            .attr("class", "accept-inner-circle")
+            .attr("r", 15.5)
+            .attr("fill", "none")
+            .attr("stroke", d => d.isInitial ? "#f59e0b" : "#38bdf8")
+            .attr("stroke-width", 1.5);
 
         // Node Label
         nodeElements.append("text")
@@ -383,7 +392,7 @@ class VisualizationEngine {
             .attr("text-anchor", "middle")
             .attr("dominant-baseline", "central")
             .text(d => {
-                if (machine.type === 'moore' && d.output !== null && d.output !== undefined) {
+                if (machine.type !== 'mealy' && d.output !== null && d.output !== undefined) {
                     return `${d.name}/${d.output}`;
                 }
                 return d.name;
